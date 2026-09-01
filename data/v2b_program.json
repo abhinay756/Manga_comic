@@ -1,0 +1,641 @@
+{
+  "program": {
+    "version": "2B",
+    "title": "Version 2B \u2014 3D-previs pipeline (parallel to Version 2 and 2A)",
+    "active_phase_id": "g2",
+    "updated_at": "2026-08-29T10:30:00+00:00",
+    "updated_by": "g2-licensed-meshes",
+    "notes": [
+      "Parallel track beside Version 2 (data/v2_program.json phases 12\u201320) and Version 2A (data/v2a_program.json A0\u2013A5). Do not edit those files from this track.",
+      "3D spec is the composition contract. Headless Blender AOVs \u2192 local ComfyUI ControlNet. Not sketch-first (that is 2A).",
+      "Image traffic is local ComfyUI or direct .env APIs. OmniRoute is text only. Never OmniRoute images.",
+      "Dashboard: /v2b reads this file. Architecture: /v2b/architecture. Source plan: /v2b/source-plan.",
+      "B0 is architecture only. No Blender or ComfyUI code until B1.",
+      "Test fixture is HIMYM Episode 1 (76 panels, longest V1 script). B1 proves panel 1 only."
+    ]
+  },
+  "phase_ids": [
+    "b0",
+    "b1",
+    "b2",
+    "b3",
+    "g1",
+    "b4",
+    "b5",
+    "b6",
+    "g2",
+    "g3",
+    "b7",
+    "b8",
+    "b9"
+  ],
+  "phases": {
+    "b0": {
+      "id": "b0",
+      "title": "Architecture freeze",
+      "track": "process",
+      "status": "complete",
+      "sort_order": 0,
+      "exit_gate": "2B is readable without running Blender or ComfyUI: docs/V2B_ARCHITECTURE.md + this JSON + /v2b; Version 2 and 2A untouched",
+      "checklist": [
+        "Copy Compass research plan to docs/V2B_SOURCE_PLAN.md",
+        "Write docs/V2B_ARCHITECTURE.md (isolation, stack, B0\u2013B9 gates, intended package layout)",
+        "Write data/v2b_program.json with exit gates and test_scene metadata",
+        "Un-ignore data/v2b_program.json in .gitignore",
+        "Do not edit data/v2_program.json, data/v2a_program.json, data/v2a/, or src/comicengine/episode_schema.py"
+      ],
+      "checklist_done": [
+        "Copy Compass research plan to docs/V2B_SOURCE_PLAN.md",
+        "Write docs/V2B_ARCHITECTURE.md (isolation, stack, B0\u2013B9 gates, intended package layout)",
+        "Write data/v2b_program.json with exit gates and test_scene metadata",
+        "Un-ignore data/v2b_program.json in .gitignore",
+        "Do not edit data/v2_program.json, data/v2a_program.json, data/v2a/, or src/comicengine/episode_schema.py"
+      ],
+      "blockers": [],
+      "notes": [
+        "Commit: phase-v2b-b0: freeze 3D-previs pipeline architecture beside Version 2 and 2A",
+        "B0 freeze already landed; JSON status closed with the B1 gate (B1 owns src/comicengine/v2b/)."
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "started",
+          "by": "b0-freeze",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-27T07:10:00+00:00",
+          "action": "completed",
+          "by": "b1-slice",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-27T07:10:00+00:00"
+    },
+    "b1": {
+      "id": "b1",
+      "title": "Vertical slice (Compass Phase 0)",
+      "track": "product/infra",
+      "status": "complete",
+      "sort_order": 1,
+      "exit_gate": "HIMYM ep1 panel 1 (living-room sofa, Dad + Maya) \u2192 Cycles blockout \u2192 one ComfyUI img2img PNG; same seed near-identical; ComfyUI over HTTP only. Do not render all 76 panels.",
+      "checklist": [
+        "Create src/comicengine/v2b/ blender headless wrapper for data/v2b/episodes/ep01.json panel 1",
+        "Low-detail living room + two seated primitives (Dad, Maya); camera and lamp from the panel-1 spec",
+        "ComfyUI HTTP client (POST /prompt, ws progress, /history + /view)",
+        "pipeline.panel produces outputs/v2b/himym_ep01/panel_01.png with zero manual steps",
+        "Re-run with the same seed is byte-identical or near-identical on the Blender render",
+        "Do not use Blender MCP as the production path",
+        "Do not edit outputs/phase4/episode_how_i_met_your_mother_ep1.json from 2B work"
+      ],
+      "checklist_done": [
+        "Create src/comicengine/v2b/ blender headless wrapper for data/v2b/episodes/ep01.json panel 1",
+        "Low-detail living room + two seated primitives (Dad, Maya); camera and lamp from the panel-1 spec",
+        "ComfyUI HTTP client (POST /prompt, ws progress, /history + /view)",
+        "pipeline.panel produces outputs/v2b/himym_ep01/panel_01.png with zero manual steps",
+        "Re-run with the same seed is byte-identical or near-identical on the Blender render",
+        "Do not use Blender MCP as the production path",
+        "Do not edit outputs/phase4/episode_how_i_met_your_mother_ep1.json from 2B work"
+      ],
+      "blockers": [],
+      "notes": [
+        "Commit: phase-v2b-b1: HIMYM ep1 panel 1 living-room two-shot through ComfyUI",
+        "Fixture is HIMYM ep1 (longest V1 episode, 76 panels). B1 is panel 1 only \u2014 not Aranya, not a nameless cube.",
+        "Blender 5.2.1 LTS via Homebrew; ComfyUI 0.34 on MPS; SD 1.5 img2img denoise 0.42. ControlNet is B2.",
+        "Outputs: outputs/v2b/himym_ep01/beauty_01.png and panel_01.png",
+        "Seed-rerun 2026-08-27: two Cycles beauty passes, seed 42. PNG hashes differ (encoder metadata); mean pixel MAE 0.0."
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        },
+        {
+          "at": "2026-08-27T06:38:00+00:00",
+          "action": "started",
+          "by": "b1-slice",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-27T07:10:00+00:00",
+          "action": "completed",
+          "by": "b1-slice",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-27T07:10:00+00:00"
+    },
+    "b2": {
+      "id": "b2",
+      "title": "AOVs + ControlNet (Compass Phase 1)",
+      "track": "product",
+      "status": "complete",
+      "sort_order": 2,
+      "exit_gate": "Blender emits depth, normal, Freestyle, object-index; ComfyUI multi-ControlNet follows 3D geometry; structure SSIM(depth) floor on 3 test cameras",
+      "checklist": [
+        "Configure Cycles AOVs: depth, normal, Freestyle as render pass, object-index",
+        "ComfyUI workflow JSON consumes depth + lineart (multi-ControlNet)",
+        "eval/structure re-extracts depth/edges vs conditioning",
+        "Visual check: camera/room match the 3D across 3 cameras"
+      ],
+      "checklist_done": [
+        "Configure Cycles AOVs: depth, normal, Freestyle as render pass, object-index",
+        "ComfyUI workflow JSON consumes depth + lineart (multi-ControlNet)",
+        "eval/structure re-extracts depth/edges vs conditioning",
+        "Visual check: camera/room match the 3D across 3 cameras"
+      ],
+      "blockers": [],
+      "notes": [
+        "Commit: phase-v2b-b2: Blender AOVs drive multi-ControlNet structure",
+        "Skip StableGen \u2014 custom ComfyUI graph only",
+        "B2 stays SD 1.5 ControlNet on Mac MPS. SDXL waits for a machine that fits ControlNet+SDXL.",
+        "Blender 5.2 Freestyle-as-pass is empty; lineart is Grease Pencil Line Art on black, not canny-from-beauty. index_01.png is dad=R, maya=G.",
+        "Outputs: outputs/v2b/himym_ep01/cam_{a,b,c}/{beauty,depth,lineart,normal,index,panel}_01.png",
+        "Structure scorecard data/v2b/eval/himym_ep01_b2_structure.json: mean SSIM(depth) 0.575 (cheap skimage, no Depth-Anything); hypothesis 0.7 calibrated to 0.53. mean edge IoU 0.368. Visual geometry lock holds on all 3 cameras."
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        },
+        {
+          "at": "2026-08-27T07:40:00+00:00",
+          "action": "completed",
+          "by": "b2-controlnet",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-27T07:40:00+00:00"
+    },
+    "b3": {
+      "id": "b3",
+      "title": "Style LoRA (Compass Phase 2)",
+      "track": "product",
+      "status": "complete",
+      "sort_order": 3,
+      "exit_gate": "One style LoRA at fixed weight on every panel; locked checkpoint/sampler; style reads as intentional comic art, not default slop",
+      "checklist": [
+        "Train or acquire one SD 1.5 style LoRA (SDXL ControlNet does not fit this 16GB MPS machine); record hash in registry",
+        "Apply at fixed weight on every stylize call",
+        "Lock checkpoint, sampler, steps, CFG, denoise, seed",
+        "Human gut-check across 3 cameras of panel 1"
+      ],
+      "checklist_done": [
+        "Train or acquire one SD 1.5 style LoRA (SDXL ControlNet does not fit this 16GB MPS machine); record hash in registry",
+        "Apply at fixed weight on every stylize call",
+        "Lock checkpoint, sampler, steps, CFG, denoise, seed",
+        "Human gut-check across 3 cameras of panel 1"
+      ],
+      "blockers": [],
+      "notes": [
+        "Commit when done: phase-v2b-b3: lock style LoRA on every 2B panel",
+        "Acquired neonforestmist/sd15-storybook-anime-lora (CreativeML OpenRAIL-M). SHA256 0304bb42819790cf63f4125ac70cee60fda682cc5aa4bfb512bb9e3b1746e9b0. Weights gitignored.",
+        "Locked: v1-5-pruned-emaonly, euler 18, CFG 6.5, seed 42, denoise 0.65, LoRA strength 1.0. Denoise raised from B2 0.45 so the LoRA can show through ControlNet.",
+        "SDXL style LoRA remains the later ship path. Do not ship on FLUX.1-dev.",
+        "Gut-check is 3 cameras of panel 1, not 10 scenes (that is B8). Capsule meshes still read as illustrated blockout; ink-line faces wait on B4."
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        },
+        {
+          "at": "2026-08-27T18:05:00+00:00",
+          "action": "completed",
+          "by": "b3-style-lora",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-27T18:05:00+00:00"
+    },
+    "g1": {
+      "id": "g1",
+      "title": "Gate 1 \u2014 eval harness (prove-shot)",
+      "track": "learning",
+      "status": "complete",
+      "sort_order": 3.5,
+      "exit_gate": "Four-axis scorecard on HIMYM p1 cameras; pairwise Gemini vision judge; 12 human A/B labels; best-of-N N=4; preferences.jsonl for later B9. No PPO/GRPO/DPO training.",
+      "checklist": [
+        "Structure floor 0.53 + restage detector on locked B3 and BoN candidates",
+        "Identity cosine vs beauty logged only (capsules; not a fail gate)",
+        "Pairwise Gemini vision (pixels, A/B swap) \u2014 never OmniRoute images",
+        "12 human A/B clicks on /v2b/gate1; report LLM\u2013human agreement",
+        "Best-of-N seeds 42\u201345 on existing AOVs; emit winner + scorecard",
+        "Do not mark B8 complete; do not train DPO; do not render all 76 panels"
+      ],
+      "checklist_done": [
+        "Structure floor 0.53 + restage detector on locked B3 and BoN candidates",
+        "Identity cosine vs beauty logged only (capsules; not a fail gate)",
+        "Pairwise Gemini vision (pixels, A/B swap) \u2014 never OmniRoute images",
+        "12 human A/B clicks on /v2b/gate1; report LLM\u2013human agreement",
+        "Best-of-N seeds 42\u201345 on existing AOVs; emit winner + scorecard",
+        "Do not mark B8 complete; do not train DPO; do not render all 76 panels"
+      ],
+      "blockers": [],
+      "notes": [
+        "Scorecard data/v2b/eval/himym_ep01_g1_scorecard.json. Mean SSIM(depth) 0.584 (floor 0.53). Exact LLM\u2013human 4/12; tie-lenient 10/12. Harness PASS; exact 8/12 is calibration debt, not an RL train signal.",
+        "Judge: gemini-3.6-flash direct GOOGLE_API_KEY (gemini-2.5-flash 404). 46 ok pairwise calls, $0.043. Never OmniRoute images.",
+        "BoN winners: cam_a seed_44, cam_b seed_44, cam_c seed_42 (copy of locked B3). Human+Gemini both pick locked B3 over cam_b BoN.",
+        "B8 remains production BoN on more locations. B9 stays optional cloud DPO. No PPO/GRPO/DPO trained."
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T19:00:00+00:00",
+          "action": "started",
+          "by": "g1-eval",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-27T19:50:00+00:00",
+          "action": "completed",
+          "by": "g1-eval",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-27T19:50:00+00:00"
+    },
+    "b4": {
+      "id": "b4",
+      "title": "Character LoRA bootstrap (Compass Phase 3)",
+      "track": "product",
+      "status": "complete",
+      "sort_order": 4,
+      "exit_gate": "Block humanoid Dad+Maya; Dad SD 1.5 LoRA from stylized turntable (denoise 0.4, 2 seeds) trained in ComfyUI/.venv; held-out identity Dad>Maya; living-room mean SSIM(depth) \u2265 0.53. Not SDXL. Not Maya LoRA.",
+      "checklist": [
+        "Replace capsules with block humanoids (Dad sweater/hair, Maya hoodie/ponytail) without overwriting G1 AOVs",
+        "Dad standing turntable AOVs (no sofa); optional Maya contrast views",
+        "Stylize turntable at denoise 0.4 + weaker ControlNet, 2 seeds, trigger ce_dad_rohan",
+        "Train SD 1.5 LoRA in ComfyUI/.venv (rank 16); hash in registry; weights gitignored",
+        "Stack style+Dad LoRA on B4 living-room cameras; structure floor 0.53; identity Dad vs Maya",
+        "Do not mark B8 complete; do not train Maya LoRA; do not InstantID; do not render all 76"
+      ],
+      "checklist_done": [
+        "Replace capsules with block humanoids (Dad sweater/hair, Maya hoodie/ponytail) without overwriting G1 AOVs",
+        "Dad standing turntable AOVs (no sofa); optional Maya contrast views",
+        "Stylize turntable at denoise 0.4 + weaker ControlNet, 2 seeds, trigger ce_dad_rohan",
+        "Train SD 1.5 LoRA in ComfyUI/.venv (rank 16); hash in registry; weights gitignored",
+        "Stack style+Dad LoRA on B4 living-room cameras; structure floor 0.53; identity Dad vs Maya",
+        "Do not mark B8 complete; do not train Maya LoRA; do not InstantID; do not render all 76"
+      ],
+      "blockers": [],
+      "notes": [
+        "Scorecard data/v2b/eval/himym_ep01_b4.json. --quick 8-view set. Mean SSIM(depth) 0.5488 (floor 0.53). Restage MAE vs beauty \u2264 0.082. DINOv2-small identity 3/4 Dad>Maya. cam_b SSIM 0.469 fails per-camera (same pattern as G1); mean gate holds.",
+        "LoRA ce_dad_rohan.safetensors rank 16, 250 steps, SHA256 bfd7f7d8023ba91bbf47b420a11a128465ac620865ea8a8ef6a1d973d153bfaf. Weights gitignored. Trigger ce_dad_rohan. Not Maya LoRA; not SDXL; not InstantID.",
+        "G1 PNGs under outputs/v2b/himym_ep01/cam_{a,b,c}/ stay frozen. B4 writes himym_ep01/b4/.",
+        "B8 remains locked. B6 is two LoRAs + object-index masks.",
+        "Commit: phase-v2b-b4: bootstrap character LoRA from stylized 3D turntable"
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        },
+        {
+          "at": "2026-08-27T20:00:00+00:00",
+          "action": "started",
+          "by": "b4-character-lora",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-27T21:20:00+00:00",
+          "action": "completed",
+          "by": "b4-character-lora",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-27T21:20:00+00:00"
+    },
+    "b5": {
+      "id": "b5",
+      "title": "Location reuse (Compass Phase 4)",
+      "track": "product",
+      "status": "complete",
+      "sort_order": 5,
+      "exit_gate": "Reusable versioned 3D locations; panel spec references location + character(s) + camera; four-axis scorecard per panel. Prove: living room \u00d73 + Grand Oriole lobby \u00d72. Not 76 panels. Not Rohan LoRA.",
+      "checklist": [
+        "Pydantic/YAML panel spec schema under data/v2b/",
+        "build_scene.py becomes spec-driven (not hardcoded)",
+        "Same location across multiple panels scored for background similarity",
+        "Full eval scorecard emitted per panel"
+      ],
+      "checklist_done": [
+        "Pydantic/YAML panel spec schema under data/v2b/",
+        "build_scene.py becomes spec-driven (not hardcoded)",
+        "Same location across multiple panels scored for background similarity",
+        "Full eval scorecard emitted per panel"
+      ],
+      "blockers": [],
+      "notes": [
+        "Scorecard data/v2b/eval/himym_ep01_b5.json. Living mean SSIM(depth) 0.5489 (floor 0.53). Lobby mean 0.4785 (empty-room cheap-depth; not the B2 floor). DINOv2 background: living 0.825 vs lobby-living 0.476 \u2014 same-room beats cross-room. Compass 0.9 not claimed.",
+        "Specs: data/v2b/specs/locations/{living_room,grand_oriole_lobby}.json + himym_ep01_b5.json. build_scene.py. Outputs himym_ep01/b5/. G1/B4 frozen.",
+        "No Rohan/Elena/Maya LoRA. No InstantID. B8 stays locked.",
+        "Commit: phase-v2b-b5: spec-driven locations with four-axis scorecards"
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        },
+        {
+          "at": "2026-08-28T00:20:00+00:00",
+          "action": "started",
+          "by": "b5-location-reuse",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-28T00:50:00+00:00",
+          "action": "completed",
+          "by": "b5-location-reuse",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-28T00:50:00+00:00"
+    },
+    "b6": {
+      "id": "b6",
+      "title": "Multi-character masks (Compass Phase 5)",
+      "track": "product",
+      "status": "complete",
+      "sort_order": 6,
+      "exit_gate": "Two+ character LoRAs in one panel gated by Blender object-index masks; own-identity holds, cross-identity below bleed threshold",
+      "checklist": [
+        "Object-index / cryptomatte masks from Blender",
+        "Regional prompting / LoRA gating in ComfyUI",
+        "Two-pass masked inpaint fallback if single-pass bleeds",
+        "Bleed metric: own-identity vs other-identity"
+      ],
+      "checklist_done": [
+        "Object-index / cryptomatte masks from Blender",
+        "Regional prompting / LoRA gating in ComfyUI",
+        "Two-pass masked inpaint fallback if single-pass bleeds",
+        "Bleed metric: own-identity vs other-identity"
+      ],
+      "blockers": [],
+      "notes": [
+        "Scorecard data/v2b/eval/himym_ep01_b6.json. Mean SSIM(depth) 0.5917 on cam_a/c (floor 0.53). Maya LoRA 4/4 holdout. Bleed: Dad vs pass1 0.966/0.984; Maya G-crop own>cross. Seated dad_own vs Maya sheet is log-only (block two-shot). SHA256 b767153fc38dbf7aad445165868036e14d9a8fee60fe5f0ed7ef722f9b168d86. Weights gitignored.",
+        "Two-pass: style+Dad, then VAEEncodeForInpaint on G-index with Maya LoRA. cam_b skipped. No Rohan/Elena. No InstantID. B8 stays locked.",
+        "Commit: phase-v2b-b6: mask-driven multi-character LoRAs without bleed"
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        },
+        {
+          "at": "2026-08-28T01:45:00+00:00",
+          "action": "started",
+          "by": "b6-multi-character-masks",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-28T02:50:00+00:00",
+          "action": "completed",
+          "by": "b6-multi-character-masks",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-28T02:50:00+00:00"
+    },
+    "b7": {
+      "id": "b7",
+      "title": "Storyboard sequencing (Compass Phase 6)",
+      "track": "product",
+      "status": "locked",
+      "sort_order": 9,
+      "exit_gate": "Storyboard spec produces a multi-panel sequence unattended; cache hits skip unchanged renders; cross-panel identity/location/style hold",
+      "checklist": [
+        "pipeline/storyboard.py over an ordered panel spec",
+        "Content-hash cache for renders and conditioning maps",
+        "Shared characters/locations across the sequence"
+      ],
+      "checklist_done": [],
+      "blockers": [],
+      "notes": [
+        "Commit when done: phase-v2b-b7: multi-panel storyboard sequencing with cache"
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        }
+      ],
+      "updated_at": "2026-08-27T06:00:00+00:00"
+    },
+    "b8": {
+      "id": "b8",
+      "title": "Best-of-N eval (Compass Phase 7)",
+      "track": "learning",
+      "status": "locked",
+      "sort_order": 10,
+      "exit_gate": "N candidates per panel scored on structure/identity/location/lighting; auto-select agrees with human on a labeled set; low-confidence flags disagreements",
+      "checklist": [
+        "Batch N candidates in ComfyUI (start N=4\u20138)",
+        "DINOv2/CLIP identity; depth/edge structure; VLM pairwise lighting",
+        "Hard thresholds then weighted rank; emit scorecard",
+        "Pairwise Qwen3-VL \u2014 not absolute 1\u201310 scores"
+      ],
+      "checklist_done": [],
+      "blockers": [],
+      "notes": [
+        "Commit when done: phase-v2b-b8: pairwise VLM best-of-N panel selection",
+        "Scorecards are the preference dataset for optional B9"
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        }
+      ],
+      "updated_at": "2026-08-27T06:00:00+00:00"
+    },
+    "b9": {
+      "id": "b9",
+      "title": "RL / DPO (Compass Phase 8, optional)",
+      "track": "learning",
+      "status": "locked",
+      "sort_order": 11,
+      "exit_gate": "Optional. Cloud Diffusion-DPO LoRA from accumulated best-of-N pairs; only after pairs exist and local 16GB is known not to fit",
+      "checklist": [
+        "Do not start until a few thousand preference pairs exist",
+        "Rent cloud GPU (A100/H100); do not attempt DPO on 16GB",
+        "LoRA-only DPO on attention blocks first if attempted"
+      ],
+      "checklist_done": [],
+      "blockers": [
+        "Preference pairs from B8",
+        "Cloud GPU budget"
+      ],
+      "notes": [
+        "Commit if ever: phase-v2b-b9: optional cloud DPO from 2B preference pairs",
+        "Explicitly optional. Best-of-N with N\u22658 may be enough."
+      ],
+      "history": [
+        {
+          "at": "2026-08-27T06:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        }
+      ],
+      "updated_at": "2026-08-27T06:00:00+00:00"
+    },
+    "g2": {
+      "id": "g2",
+      "title": "Licensed character meshes",
+      "track": "product",
+      "status": "complete",
+      "sort_order": 7,
+      "exit_gate": "Pinned CC0 glTF stand-ins replace block humanoids on living-room cam_a/c; new LoRAs ce_dad_gltf/ce_maya_gltf; B2\u2013B6 rollup scorecard. Search UI is G3.",
+      "checklist": [
+        "Pin two CC-licensed glTF/GLB humans (Kenney protagonists, CC0) with LICENSE + registry",
+        "Bake seated/standing GLBs; import in Blender with object-index",
+        "Retrain Dad+Maya LoRAs under new filenames (do not overwrite ce_dad_rohan/ce_maya)",
+        "Two-pass living-room cam_a and cam_c; sibling tree himym_ep01/g2/",
+        "Rollup B2\u2013B6 eval into data/v2b/eval/himym_ep01_until_now.json",
+        "Do not wire Sketchfab/Mixamo search; that is locked G3",
+        "Do not render 76 panels; no InstantID; B8 stays locked"
+      ],
+      "checklist_done": [
+        "Pin two CC-licensed glTF/GLB humans (Kenney protagonists, CC0) with LICENSE + registry",
+        "Bake seated/standing GLBs; import in Blender with object-index",
+        "Retrain Dad+Maya LoRAs under new filenames (do not overwrite ce_dad_rohan/ce_maya)",
+        "Two-pass living-room cam_a and cam_c; sibling tree himym_ep01/g2/",
+        "Rollup B2\u2013B6 eval into data/v2b/eval/himym_ep01_until_now.json",
+        "Do not wire Sketchfab/Mixamo search; that is locked G3",
+        "Do not render 76 panels; no InstantID; B8 stays locked"
+      ],
+      "blockers": [],
+      "notes": [
+        "Scorecard data/v2b/eval/himym_ep01_g2.json. Mean SSIM(depth) 0.5808 on cam_a/c (floor 0.53). cam_a 0.523 under per-camera; mean is the gate. Maya holdout DINOv2 4/4. Bleed: Dad vs pass1 0.990/0.979. Maya G-crop own>cross (narrow). Seated dad_own vs Maya sheet log-only.",
+        "Kenney Animated Characters Protagonists 1.1 CC0. New LoRAs ce_dad_gltf SHA256 7b71b798\u2026f3c4 and ce_maya_gltf 2681efe4\u2026ce57. Block LoRAs ce_dad_rohan/ce_maya untouched. Outputs himym_ep01/g2/. Rollup himym_ep01_until_now.json.",
+        "Stand-in cartoon skaters, not Indian-presenting likenesses. G3 catalog search stays locked. No InstantID. B8 stays locked.",
+        "Commit: phase-v2b-g2: licensed glTF characters replace block humanoids"
+      ],
+      "history": [
+        {
+          "at": "2026-08-29T09:00:00+00:00",
+          "action": "started",
+          "by": "g2-licensed-meshes",
+          "status": "in_progress"
+        },
+        {
+          "at": "2026-08-29T10:30:00+00:00",
+          "action": "completed",
+          "by": "g2-licensed-meshes",
+          "status": "complete"
+        }
+      ],
+      "updated_at": "2026-08-29T10:30:00+00:00"
+    },
+    "g3": {
+      "id": "g3",
+      "title": "Character catalog search (locked)",
+      "track": "product",
+      "status": "locked",
+      "sort_order": 8,
+      "exit_gate": "Dashboard search box queries a licensed catalog, pick a character, drop it into the 3D spec, optional pose/edit. Not this gate.",
+      "checklist": [
+        "Dashboard /v2b search UI over a pinned catalog (Sketchfab CC filter or local registry)",
+        "Import selected glTF into the living-room spec and re-render AOVs",
+        "Edit/replace Dad or Maya without retraining on Mixamo-licensed meshes",
+        "Do not start until G2 mesh import path is proven"
+      ],
+      "checklist_done": [],
+      "blockers": [
+        "G2 licensed import path"
+      ],
+      "notes": [
+        "User-requested: search any model from the UI and edit the character. Locked on purpose.",
+        "Mixamo/Adobe terms stay off-limits for LoRA training.",
+        "Commit when done: phase-v2b-g3: dashboard catalog search for character meshes"
+      ],
+      "history": [
+        {
+          "at": "2026-08-29T09:00:00+00:00",
+          "action": "seeded",
+          "by": "system",
+          "status": "locked"
+        }
+      ],
+      "updated_at": "2026-08-29T09:00:00+00:00"
+    }
+  },
+  "test_series": {
+    "title": "How I Met Your Mother \u2014 Episode 1: Infatuation",
+    "product_claim": "Longest existing ComicEngine script (76 panels). 2B owns a packet under data/v2b/; V1 JSON stays read-only. Not Aranya. Not 2A.",
+    "id": "himym_ep01",
+    "source_v1": "outputs/phase4/episode_how_i_met_your_mother_ep1.json",
+    "packet": "data/v2b/episodes/ep01.json",
+    "tone": "dad-to-daughter love story, soft romance, non-explicit",
+    "epic": "How I Met Your Mother",
+    "book": "Season 1",
+    "arc": "Infatuation",
+    "episode_count": 1,
+    "panel_count": 76,
+    "leads": [
+      "dad",
+      "daughter",
+      "rohan",
+      "elena"
+    ],
+    "supporting": [
+      "kabir",
+      "arjun",
+      "wei",
+      "marcus"
+    ],
+    "locations": [
+      "living_room",
+      "sjc_arrivals",
+      "grand_oriole_corridor",
+      "hotel_room_rohan",
+      "grand_oriole_lobby",
+      "light_rail",
+      "meridian_campus",
+      "hotel_dining",
+      "elena_room"
+    ],
+    "episodes": [
+      {
+        "n": 1,
+        "title": "Infatuation",
+        "story_goal": "Dad tells Maya how he met Mom: shy Rohan keeps crossing Elena on a Bay Area work trip until feelings are known.",
+        "framework_goal": "76-panel consistency: living-room frame, hotel/lobby/tram locations, Rohan+Elena identity.",
+        "gate": "G2 Kenney CC0 glTF two-pass on living-room cam_a/c. Do not render all 76."
+      }
+    ]
+  },
+  "test_scene": {
+    "title": "HIMYM ep1 \u00b7 panel 1 \u2014 living-room sofa",
+    "product_claim": "G2: Kenney CC0 stand-in meshes + new LoRAs ce_dad_gltf/ce_maya_gltf. Two-pass on cam_a/c. Catalog search is locked G3.",
+    "description": "Night living room, soft lamp. Licensed cartoon stand-ins sit on the sofa (not Indian-presenting likenesses). Locked camera and key light.",
+    "fixture": "himym_ep01_panel_01",
+    "episode_id": "himym_ep01",
+    "panel_index": 1,
+    "location_id": "living_room",
+    "characters": [
+      "dad",
+      "daughter"
+    ],
+    "not_from": "data/v2a/",
+    "packet": "data/v2b/episodes/ep01.json",
+    "b1_output": "outputs/v2b/himym_ep01/panel_01.png",
+    "b2_outputs": "outputs/v2b/himym_ep01/cam_{a,b,c}/"
+  }
+}

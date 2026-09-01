@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manga Engine · Usage</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <div>
+      <p class="brand"><span class="brand-name">Manga Engine</span> <span class="beta-pill">Beta</span></p>
+      <h1>Admin · Live stats</h1>
+    </div>
+    <div class="status nav-links">
+      <a class="btn" href="/admin">Stats</a>
+      <a class="btn" href="/analytics">Analytics</a>
+      <a class="btn" href="/images">Images</a>
+      <a class="btn" href="/library">Library</a>
+      <a class="btn" href="/roi">ROI</a>
+      <a class="btn" href="/reviewers">Reader CRM</a>
+      <a class="btn" href="/v2a">Version 2A</a>
+      <a class="btn" href="/v2b">Version 2B</a>
+      <a class="btn" href="/report" target="_blank" rel="noopener">Report</a>
+      <a class="btn pe-primary" href="/review">Public review →</a>
+      <span id="liveDot" class="dot"></span>
+      <span id="updated">connecting…</span>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+  <p class="live-spend muted small" id="liveSpend">Live spend updating…</p>
+
+  <section class="romance-wrap">
+    <div class="tasks-head">
+      <h2>Romance pipeline · How I Met Your Mother</h2>
+      <div class="tasks-meta">
+        <span id="romancePct">0%</span>
+        <span id="romanceSpend" class="muted">$0</span>
+      </div>
+    </div>
+    <div class="romance-stepper" id="romanceStepper" aria-label="Romance phase steps"></div>
+    <div class="task-progress romance-bar"><span id="romanceBar"></span></div>
+    <p class="muted small" id="romanceNote">Steps: script → refs → panels → bubbles → assemble</p>
+  </section>
+
+  <section class="stories-wrap">
+    <div class="tasks-head">
+      <h2>Stories</h2>
+      <div class="tasks-meta">
+        <span id="storyCount">0</span>
+        <a class="btn" href="/library">Library</a>
+        <a class="btn" href="/api/stories" target="_blank" rel="noreferrer">API</a>
+      </div>
+    </div>
+    <div id="storyList" class="story-list"></div>
+  </section>
+
+  <section class="tasks-wrap">
+    <div class="tasks-head">
+      <h2>TaskObserver</h2>
+      <div class="tasks-meta">
+        <span id="taskPct">0%</span>
+        <button type="button" id="refreshTasks" class="btn">Refresh</button>
+      </div>
+    </div>
+    <div class="task-progress"><span id="taskBar"></span></div>
+    <div id="taskCounts" class="task-counts"></div>
+    <ul id="taskList" class="task-list"></ul>
+  </section>
+
+  <section class="grid">
+    <article>
+      <h2>By provider</h2>
+      <div id="byProvider"></div>
+    </article>
+    <article>
+      <h2>API spend by phase</h2>
+      <p class="muted small" style="margin:0 0 0.5rem">Phases 6+ are mostly local ($0). They appear when compose/assemble/export/feedback runs.</p>
+      <div id="byPhase"></div>
+    </article>
+    <article class="wide">
+      <h2>Spend over time</h2>
+      <canvas id="chart" height="120"></canvas>
+    </article>
+    <article class="wide">
+      <h2>Recent calls</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>When</th><th>Phase</th><th>Provider</th><th>Model</th>
+              <th>In</th><th>Out</th><th>Img</th><th>$</th><th>ms</th><th>OK</th>
+            </tr>
+          </thead>
+          <tbody id="recent"></tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <script src="/static/app.js"></script>
+<footer class="site-footer">
+  <p>© 2026 Abhinay · Manga Engine</p>
+  <p class="muted small">AI comic pipeline — beta preview. Built by Abhinay (<a href="https://github.com/navinash47" target="_blank" rel="noopener">@navinash47</a>).</p>
+</footer>
+</body>
+</html>

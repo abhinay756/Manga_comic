@@ -1,0 +1,642 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[margin=0.7in]{geometry}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{caption}
+\renewcommand{\ttdefault}{lmtt}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue!50!black
+}
+
+\title{\vspace{-1.2em}
+\textbf{Manga Engine: A Code-First Pipeline for\\
+Consistent, Cost-Aware AI History Comics}\\[0.4em]
+\large Technical Report on the \emph{onceuponatime} System\\[0.3em]
+\normalsize Living Phase Log (updated after each phase gate)\\[0.2em]
+\normalsize Snapshot: 29~August~2026 · Phases~0--11 + Romance HIMYM Ep1 + Version~2B B0--G2 + G1
+\vspace{-0.6em}}
+
+\author{
+Abhinay\\
+\textit{Independent Project / Manga Engine}\\
+\texttt{github.com/navinash47/ComicMainEngine}
+}
+
+\date{Report regenerate: \texttt{python scripts/build\_report.py}}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+We present \textbf{Manga Engine}, a modular, code-first system for generating educational manga and comics with recurring characters, tracked API spend, and human-in-the-loop curation.
+Built for \emph{onceuponatime} (bedtime narratives that explain real events to children), the system separates \emph{coding/LLM} traffic (optionally via OmniRoute at \texttt{localhost:20128}) from \emph{image generation} (direct commercial APIs: fal FLUX, Google Gemini image).
+This living report records what each phase actually ran, what worked, quantitative ledger totals from SQLite (\texttt{data/usage.db}), style bake-off judge scores, and interim character-consistency findings.
+\textbf{As of this snapshot:} Phase~9 adds an ROI dashboard at \texttt{/roi} with unit economics (\$/story, \$/panel, 100-episode projection), spend breakdowns by phase/provider/category/purpose, charts, and model recommendations from the live ledger ($\approx$\$2.96 R\&D so far).
+\end{abstract}
+
+\section{Introduction}
+Production AI comics need character/style consistency, predictable cost, commercially licensed image paths, and an auditable spend ledger.
+Manga Engine addresses these with phasal CLIs, Pydantic episode JSON, style presets, and a FastAPI dashboard (Tasks, Stories, Analytics, Images, and this Report PDF at \texttt{/report}).
+
+\paragraph{Test story.}
+End-to-end stress test: dramatized bedtime episode about the Cockroach Janta Party (CJP) / fair-exam student protests (characters including Abhijeet Dipke, Saurav Das, public figures portrayed respectfully for pipeline testing only).
+
+\paragraph{Living-document policy.}
+After every phase gate we (1)~append empirical results to this \texttt{.tex}, (2)~rebuild the PDF, and (3)~include the report update in the same phase merge to \texttt{master}.
+
+\section{Routing and Licensing Constraints}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \textbf{Text / coding LLMs:} OmniRoute when \texttt{USE\_OMNIROUTE=1} + \texttt{OMNIROUTE\_API\_KEY}.
+  \item \textbf{All images:} direct \texttt{.env} keys only (\texttt{FAL\_API\_KEY}/\texttt{FAL\_KEY}, \texttt{GOOGLE\_API\_KEY}) — never OmniRoute.
+  \item Local FLUX~\texttt{[dev]} / Kontext~\texttt{[dev]} remain R\&D-only under BFL non-commercial terms; production-like finals use commercial fal/Gemini APIs.
+\end{itemize}
+
+\section{Architecture (stable through Phase~3)}
+\texttt{src/comicengine/}: config, pricing, tracked clients, styles, analytics, stories, gallery, tasks.
+\texttt{scripts/}: phase CLIs. \texttt{dashboard/}: FastAPI + static UI.
+\texttt{data/usage.db}: per-call ledger. \texttt{data/style\_lock.json}: bake-off + human-judge flags.
+\texttt{outputs/}: episode JSON, images, reports.
+
+\paragraph{Evaluation stack.}
+Pillow heuristics (existence, min dims, mean brightness/variance anti-blank) write \texttt{image\_quality} into call metadata.
+Analytics derives model recommendations (\texttt{data/model\_recommendations.json}) — advisory only; scripts do not auto-switch.
+
+\section{Cumulative Ledger Snapshot}
+\label{sec:ledger}
+Source: live SQLite summary at report build time.
+
+\begin{table}[t]
+\centering
+\caption{Spend and success by phase totals (ledger).}
+\label{tab:cat}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Phase & Calls & Cost (USD) & Notes \\
+\midrule
+phase0   & 13 & 0.003 & provider pings \\
+phase0.5 &  2 & 0.046 & CJP script \\
+phase1   &  1 & 0.003 & fal schnell proof \\
+phase2   & 13 & 0.093 & style bake-off + judge \\
+phase3   & 23 & 0.387 & refs + consistency + judge \\
+phase4   & 11 & 0.655 & Caesar + Hitler scripts \\
+phase5   & 66 & 1.772 & refs + 44 panels \\
+\midrule
+\textbf{total} & 129 & \textbf{2.960} & incl.\ retries \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Top providers by estimated spend (post Phase~3).}
+\label{tab:prov}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Provider & Calls & Cost (USD) \\
+\midrule
+google & 10 & 0.273 \\
+fal & 28 & 0.158 \\
+omniroute:anthropic & 4 & 0.053 \\
+anthropic (direct) & 4 & 0.046 \\
+omniroute:openai & 3 & 0.002 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Unit costs that worked in practice.}
+fal FLUX.~\texttt{schnell}: \textbf{$\approx\$0.003$}/image, $\sim$1.5--2.4\,s.
+Gemini \texttt{gemini-3.1-flash-image-preview}: \textbf{$\approx\$0.039$}/image, $\sim$9--12\,s.
+fal FLUX.~\texttt{pro/kontext}: \textbf{$\approx\$0.040$}/image, $\sim$11--14\,s.
+Text script generation (Claude Haiku): \textbf{$\approx\$0.046$} for the CJP episode.
+
+\section{Phase Log --- What Ran and What Worked}
+
+\subsection{Phase 0 --- Environments \& pings}
+\textbf{Goal.} Authenticate providers; prove routing.
+\textbf{What worked.} Anthropic Claude Haiku, OpenAI \texttt{gpt-4.1-mini}, OmniRoute \texttt{auto/cheap} for Anthropic and OpenAI, Gemini text via \textbf{direct} Google.
+\textbf{What failed / adapted.} Older Gemini Flash IDs error under ``new user'' model restrictions; replaced with \texttt{gemini-3.1-flash-lite} (text) and later \texttt{gemini-3.1-flash-image-preview} (image).
+One logged text error remains in the ledger (Gemini model mismatch during early ping).
+\textbf{Gate.} Success when calls land in SQLite with status \texttt{ok}.
+
+\subsection{Phase 0.5 --- Script engine}
+\textbf{Goal.} Structured bedtime episode JSON for Stories UI.
+\textbf{What worked.} Claude Haiku $\rightarrow$ Pydantic episode \texttt{outputs/phase0.5/episode\_cjp\_origin.json}: title \emph{The Cockroach Janta Party: When Students Ask for Fair Exams}, \textbf{12 panels}, fact sheet + \texttt{art\_prompt}s.
+Wikimedia Commons location refs fetched into \texttt{outputs/phase0.5/refs/} with attribution manifest (place/atmosphere refs, not official CJP press kits).
+\textbf{Cost.} $\approx$\$0.046 text (2 Anthropic calls in phase tag).
+\textbf{Evaluation.} Human-readable in dashboard Stories; suitable as Phase~1--3 prompt source.
+
+\subsection{Phase 1 --- Single commercial image path}
+\textbf{Goal.} Prove fal FLUX~\texttt{schnell} with tracked image category + QA.
+\textbf{What worked.} \texttt{scripts/phase1\_generate.py --backend fal} $\rightarrow$ \texttt{outputs/phase1/flux\_schnell\_fal.png}; QA \texttt{pass}; \$0.003.
+\textbf{Evaluation.} Establishes the cheap default image backend for bake-offs.
+
+\subsection{Phase 2 --- Style bake-off (complete; human lock pending)}
+\textbf{Setup.} Four presets $\times$ two fixed beats (Abhijeet+students; dad--daughter bedtime) via fal~\texttt{schnell}:
+\texttt{korean\_manhwa}, \texttt{painterly\_storybook}, \texttt{graphic\_novel}, \texttt{watercolor\_editorial}.
+Eight bake-off images under \texttt{outputs/phase2/bakeoff/}; all QA scores \textbf{1.0 / pass}. Total image spend for 8 equal-cost styles: \textbf{\$0.024}.
+
+\begin{table}[t]
+\centering
+\caption{LLM auto-judge rubric totals (higher better; max domain score 10 each).}
+\label{tab:judge}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Style & Imm. & Bed. & Civic & Cost & Total \\
+\midrule
+painterly\_storybook & 7 & 10 & 8 & 9 & \textbf{34} \\
+graphic\_novel & 8 & 7 & 10 & 9 & \textbf{34} \\
+watercolor\_editorial & 7 & 8 & 9 & 9 & 33 \\
+korean\_manhwa & 9 & 6 & 7 & 9 & 31 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Auto-judge conclusion.}
+Winner: \texttt{painterly\_storybook} (bedtime safety). Closest civic alternative: \texttt{graphic\_novel}. Cheap good-enough: \texttt{watercolor\_editorial}.
+Manhwa won immersion (9) but scored lowest bedtime safety (6).
+
+\paragraph{Human policy (current).}
+\texttt{human\_judge\_pending=true}; \texttt{preferred\_while\_judging=korean\_manhwa} so active rendering stays webtoon-like while the operator compares finals in the Images tab.
+Override anytime with \texttt{STYLE\_ID} or by editing \texttt{data/style\_lock.json}.
+
+\paragraph{Phase~2 also generated.} Style grid previews and Gemini comparison sample (\texttt{style\_gemini\_01\_\ldots}); Gemini image is $\approx$13$\times$ fal~\texttt{schnell} unit cost.
+
+\subsection{Phase 3 --- Character consistency (complete)}
+\textbf{Goal.} Expanded cast reference sheets + method bake-off for identity lock across poses.
+\textbf{Artifacts.} \texttt{outputs/phase3/consistency\_manifest.json}, \texttt{decision.json}; code: \texttt{scripts/phase3\_consistency\_bakeoff.py}, \texttt{characters\_phase3.py}, client helpers \texttt{fal\_kontext\_edit} / \texttt{gemini\_image\_with\_refs}.
+Merged to \texttt{master} as commit \texttt{5078ead}.
+
+\paragraph{What worked (22/22, 0 failures).}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \textbf{8 ref sheets} (fal~\texttt{schnell}): Abhijeet, Saurav Das, Modi, Amit Shah, Sonam Wangchuk, police, dad, daughter.
+  \item \textbf{14 consistency scenes} under interim style \texttt{korean\_manhwa}: Abhijeet $\times$2 scenes $\times$3 methods; Dad/Modi $\times$2 scenes $\times$2 methods (\texttt{text\_only\_fal}, \texttt{gemini\_ref}).
+  \item All Pillow QA verdicts \texttt{pass}; $\approx$\$0.387 phase spend (images direct fal/Google; OmniRoute used only for text judge).
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\caption{Phase~3 method judge scores (higher better).}
+\label{tab:p3judge}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Method & Face & Outfit & Style & Rel. & Cost & Total \\
+\midrule
+\texttt{gemini\_ref} & 8 & 8 & 8 & 9 & 7 & \textbf{40} \\
+\texttt{flux\_kontext} & 9 & 9 & 8 & 7 & 3 & 36 \\
+\texttt{text\_only\_fal} & 3 & 3 & 7 & 9 & 10 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Decision (ship).}
+Winner: \textbf{\texttt{gemini\_ref}} (Gemini Flash Image + reference sheet) as default identity lock for hero cast.
+Reserve \textbf{\texttt{flux\_kontext}} for hard Abhijeet closeup/speak retries when face drift appears.
+Use \textbf{\texttt{text\_only\_fal}} only for cheap drafts/extras (weak cross-scene identity despite perfect blank-frame QA).
+
+\paragraph{Evaluation caveats (from decision notes).}
+Local QA checks blanks/dims/brightness---not identity; Kontext under-sampled ($n{=}2$, Abhijeet-only); Gemini aspect ratios sometimes vary (e.g.\ $848{\times}1264$).
+Human eye review on Images tab remains recommended before episode mass generation.
+
+\subsection{Phase 4 --- Multi-topic scripts (complete for gate)}
+\textbf{Goal.} Generalize Topic$\rightarrow$episode JSON beyond CJP; ship two hard-history episodes written \emph{through character lenses} with modern-affairs analogies (teen/young-adult didactic, user-selected framing).
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Character bibles: \texttt{characters\_caesar.py}, \texttt{characters\_hitler.py} (ideology/thinking in \texttt{notes}).
+  \item Generalized \texttt{generate\_episode(story\_key)} + registry \texttt{STORIES} (\texttt{cjp}, \texttt{et\_tu\_brutus}, \texttt{hitler\_warning}).
+  \item CLI \texttt{scripts/phase4\_scripts.py}; OmniRoute default model \texttt{auto} ( \texttt{auto/cheap} often skipped \texttt{tool\_use}).
+  \item Robustness: retries, JSON-only fallback, normalize panels (speaker lists $\rightarrow$ dialogue strings; verdict aliases).
+\end{itemize}
+
+\paragraph{Stories now in dashboard (beside CJP).}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \texttt{episode\_cjp\_origin} (phase0.5, 12 panels) --- fair exams / youth protest.
+  \item \texttt{episode\_et\_tu\_brutus} (phase4, 16) --- Caesar, Brutus, Cassius, Antony, People; analogies: fragile republic, personality cult, assassination is not a liberty reset.
+  \item \texttt{episode\_hitler\_warning} (phase4, 16) --- Hitler/Goebbels/Eichmann ideology \emph{exposed then condemned}; Jewish teen + resistance + bystander; analogies: propaganda, minority hate, bureaucracy of atrocity, legal demolition of democracy.
+\end{itemize}
+
+\paragraph{Cost.} Phase~4 script spend $\approx$\$0.655 (11 text calls incl.\ retries). Cumulative ledger $\approx$\$1.19.
+
+\paragraph{Ethics evaluation.} Hitler episode is explicitly anti-fascist education (no gore; no Nazi glamour). Character POV is used so propaganda patterns are recognizable; Dad/victims close the frame. Requires human fact-check before any public publish.
+
+\subsection{Phase 5 --- Panel batch generator (complete)}
+\textbf{Goal.} Episode JSON $\rightarrow$ panel PNGs with Phase~3 consistency defaults + retries + cost ledger.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \texttt{comicengine.panel\_batch} + \texttt{scripts/phase5\_panel\_batch.py}
+  \item Ref sheets under \texttt{outputs/phase5/refs/} (reuse Phase~3 when present; else fal~\texttt{schnell})
+  \item Default render: \texttt{gemini\_ref} (up to 3 cast refs) $\rightarrow$ QA-fail/error falls back to \texttt{flux\_kontext} then \texttt{text\_only\_fal}
+  \item Writes \texttt{image\_path}/\texttt{image\_method}/\texttt{image\_qa} into episode JSON; Stories UI shows \texttt{/media/...} images
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\caption{Phase~5 full-batch results (all QA pass).}
+\label{tab:p5}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Story & Panels ok & Errors & Primary methods \\
+\midrule
+episode\_cjp\_origin & 12/12 & 0 & gemini\_ref $\times$12 \\
+episode\_et\_tu\_brutus & 16/16 & 0 & gemini\_ref $\times$16 \\
+episode\_hitler\_warning & 16/16 & 0 & gemini\_ref $\times$11 + kontext $\times$5 \\
+\midrule
+\textbf{total} & \textbf{44/44} & \textbf{0} & Phase spend $\approx$\$1.77 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Evaluation.} Perfect pipeline success rate for this batch. Kontext retries concentrated on Hitler-era panels (likely safety/policy or identity hardness) --- validates the Phase~3 ship rule: gemini default, Kontext for hard retries. Human visual review still required for identity drift and historical care (especially atrocity education frames).
+
+\subsection{Phase 6 --- Speech bubble compositor + story reader (complete)}
+\textbf{Goal.} Readable on-image dialogue/captions and a webpage that feels like reading a comic (not only a dump of PNGs).
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Pillow compositor (\texttt{comicengine.compositor}): rounded speech bubbles (speaker labels + wrapped lines), caption bar, local Arial font.
+  \item CLI \texttt{scripts/phase6\_compose.py} wrote \texttt{outputs/phase6/<story>/panel\_XX.png} and \texttt{composed\_image\_path} on each panel.
+  \item \textbf{44/44} panels composed, 0 errors (offline, no API cost).
+  \item Stories UI: cast list, fact sheet intro, ``Opening/Meanwhile'' bridge narration between panels, composed images via \texttt{/media/...}, dialogue + caption text beneath each panel, closing fact checks.
+\end{itemize}
+
+\subsection{Phase 7 --- Episode assembler (complete)}
+\textbf{Goal.} One readable artifact per episode: long vertical webtoon + printable PDF.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \texttt{comicengine.assembler} + \texttt{scripts/phase7\_assemble.py}
+  \item Cover strip + composed Phase~6 panels stacked at width 900 with gutter; multi-page PDF via Pillow.
+  \item Outputs: \texttt{outputs/phase7/<story>/webtoon.png}, \texttt{episode.pdf}, \texttt{manifest.json}
+  \item Stories pages expose webtoon preview + PDF/webtoon buttons.
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\caption{Phase~7 assembly outputs.}
+\label{tab:p7}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Story & Panels assembled & Artifacts \\
+\midrule
+episode\_cjp\_origin & 12 & webtoon + PDF \\
+episode\_et\_tu\_brutus & 16 & webtoon + PDF \\
+episode\_hitler\_warning & 16 & webtoon + PDF \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Phase 7.5 --- Only Image + Story Library (complete)}
+\textbf{Goal.} Store UI stories centrally; also ship bubble-free visual editions.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \texttt{edition='image\_only'} assembler path $\rightarrow$ \texttt{outputs/phase7.5/<story>/webtoon\_image\_only.png} + \texttt{episode\_image\_only.pdf}
+  \item CLI \texttt{scripts/phase7\_5\_image\_only.py} for all three stories
+  \item \texttt{comicengine.library} catalog at \texttt{outputs/library/catalog.json}
+  \item Dashboard \texttt{/library} with Reader vs Only-Image editions; nav link sitewide
+\end{itemize}
+
+\subsection{Phase 8 --- Curation CLI + SQLite (complete)}
+\textbf{Goal.} Human gate: approve / reject / regenerate panels and episodes with durable status.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item SQLite table \texttt{curation\_item} in \texttt{data/usage.db} via \texttt{comicengine.curation}
+  \item CLI \texttt{scripts/phase8\_curate.py} (\texttt{seed|list|summary|approve|reject|regenerate})
+  \item Seeded 47 rows (3 episodes + 44 panels)
+  \item Library UI chips + episode approve/reject; Alt-click regenerates panel (re-render + recompose)
+  \item APIs: \texttt{/api/curation}, \texttt{/api/curation/seed}, \texttt{/api/curation/\{id\}}, regenerate endpoint
+\end{itemize}
+
+\subsection{Phase 8.5 --- Panel rating + prompt editor (complete)}
+\textbf{Goal.} Every reject/regen opens an editable art prompt; panels carry a human rating and free-text suggestions so quality is visible on the site and refreshes after regen.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Extended \texttt{curation\_item} with \texttt{rating} (1--5) and \texttt{suggestions}
+  \item \texttt{panel\_editor\_payload} + \texttt{regenerate\_panel(..., prompt=, rating=, suggestions=)}; phase tagged \texttt{phase8.5}; edited \texttt{art\_prompt} persisted into episode JSON
+  \item \texttt{render\_panel(..., prompt\_override=)} uses the user-edited scene text
+  \item Library + Story reader modal: stars, suggestions, prompt textarea; reject/regen refresh images via cache-busting \texttt{?v=}
+  \item CLI \texttt{scripts/phase8\_5\_panel\_editor.py}; APIs for panel editor GET and JSON regenerate body
+\end{itemize}
+
+\subsection{Phase 8.6 --- Reader auth + dual Vercel hosting (complete)}
+\textbf{Goal.} Separable reader vs admin surfaces; reviewers rate panels/stories without seeing engine stats; ship a shareable beta without putting image regen on Vercel.
+
+\paragraph{What shipped.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Local FastAPI: open owner console (\texttt{/admin}, \texttt{/stats}); public comics review at \texttt{/review} with thumbnail cards, Read\&rate / PDF / Just~read, and Mom Test after ratings; Reader CRM at \texttt{/reviewers}
+  \item Vercel \textbf{comicengine-reader} (\texttt{https://comicengine-reader.vercel.app}): username/password (scrypt + HttpOnly \texttt{ce\_session} cookie + Upstash Redis)
+  \item Library cards: evaluated 3{:}2 thumbnails, title, three actions --- \textbf{Read \& rate} / \textbf{PDF} / \textbf{Just read}
+  \item Thumbnail picks (\texttt{scripts/select\_thumbnails.py}): CJP panel~5, Et~tu panel~11, Hitler-warning panel~1 (visual override away from spectacle beats)
+  \item Vercel \textbf{comicengine-admin} (\texttt{https://comicengine-admin.vercel.app}): password gate; snapshot spend/ROI/tasks + \textbf{live} Upstash people/logins/feedback + canvas charts (20\,s poll)
+  \item Branding: \textbf{Manga Engine} + \textbf{Beta} pill; footer \copyright~2026 Abhinay (reader, admin, local dashboard)
+  \item Hosting runbook \texttt{docs/HOSTING.md}; shared Upstash resource on both projects
+  \item After panel/story ratings: 14-question Mom Test questionnaire (Upstash); answers shown per person in admin live console
+\end{itemize}
+
+\paragraph{Ledger at gate (snapshot).}
+Engine usage snapshot still ~\$2.96 / 138 calls (dominant spend remains Phase~5 image batch). Hosted reader/admin traffic is Upstash + static Vercel --- not counted as OmniRoute/image ledger cost.
+
+
+\subsection{Phase 9 --- ROI dashboard (complete)}
+\textbf{Goal.} Make spend actionable: unit economics + charts from the SQLite ledger.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \texttt{comicengine.roi.roi\_dashboard()} aggregates category/purpose/daily spend + \$/story and \$/panel
+  \item Dashboard page \texttt{/roi} + \texttt{/api/roi}; nav link sitewide
+  \item Snapshot JSON \texttt{outputs/phase9/roi\_snapshot.json} via \texttt{scripts/phase9\_roi.py}
+\end{itemize}
+
+\subsection{Phase 10 --- Publishing pipeline (complete)}
+\textbf{Goal.} Export approved Library editions for Cloudflare Pages + R2; keep live auth/feedback on FastAPI.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item \texttt{comicengine.publish.export\_beta\_site()} $\rightarrow$ \texttt{outputs/phase10/site}
+  \item CLI \texttt{scripts/phase10\_publish.py} (\texttt{export|upload-r2|deploy-pages|gate})
+  \item Live Google login remains on the FastAPI host (Tunnel / public HTTPS); Pages is the static mirror
+\end{itemize}
+
+\subsection{Phase 11 --- Cost guardrails (complete)}
+\textbf{Goal.} Freeze beta spend rules before Version~2; defer expensive cheaper-backend bake-offs until Mom Test priorities are clear.
+
+\paragraph{What worked.}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Snapshot \texttt{outputs/phase11/cost\_guardrails.json} with ROI baseline + reviewer/admin regen policy
+  \item Explicit roadmap: \textbf{Version~2 begins at Phase~12}, feature work driven by exported Mom Test feedback
+\end{itemize}
+
+\subsection{Romance pipeline --- How I Met Your Mother Ep1 Infatuation (Steps~1--5 complete)}
+\textbf{Goal.} Dad$\rightarrow$daughter love-story episode (korean\_manhwa) with Maya teasing cuts and protagonist micro-feelings (butterflies, electricity, hand-hover, Limbo Date, feather).
+
+\paragraph{Steps (TaskObserver stepper).}
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+  \item \texttt{phase\_romance\_step1} --- script locked (\textbf{76 panels}) at \texttt{outputs/phase4/episode\_how\_i\_met\_your\_mother\_ep1.json}
+  \item \texttt{phase\_romance\_step2} --- manhwa character refs (8/8 cast sheets)
+  \item \texttt{phase\_romance\_step3} --- panel batch (\texttt{STYLE\_ID=korean\_manhwa}, mostly \texttt{gemini\_ref}): \textbf{76/76 ok}
+  \item \texttt{phase\_romance\_step4} --- speech bubbles / captions composed (76/76)
+  \item \texttt{phase\_romance\_step5} --- webtoon + PDF + Library (\texttt{outputs/phase7/\ldots/webtoon.png}, image-only under phase7.5)
+\end{enumerate}
+
+\paragraph{Dashboard.} Home Romance pipeline stepper + live ledger line (total spend + romance-phase spend) polled every 2s with KPIs.
+
+\paragraph{Story.} Father tells daughter how he met her mother (Rohan / Elena / Meridian Soft Bay trip).
+
+\paragraph{Cost gate.} Pre-romance ledger $\approx$\$2.96 / 138 calls.
+After Steps~1--5: romance pipeline spend $\approx$\$2.88 (refs \$0.018 + panels \$2.86; compose/assemble local \$0);
+full ledger $\approx$\$5.84 / 223 calls.
+
+\section{Version 2B (parallel 3D-previs track)}
+\label{sec:v2b}
+Version~2B is a \textbf{separate program} from Version~2 (phases 12--20) and Version~2A (sketch-first).
+Do not edit \texttt{data/v2\_program.json}, \texttt{data/v2a\_program.json}, \texttt{data/v2a/}, or \texttt{episode\_schema.py} from 2B work.
+Fixture is V1 HIMYM Episode~1 (76 panels); 2B owns \texttt{data/v2b/episodes/ep01.json}. Image traffic is local ComfyUI or direct \texttt{.env} APIs --- never OmniRoute.
+
+\paragraph{B0 architecture freeze.}
+Docs + \texttt{data/v2b\_program.json} + dashboard \texttt{/v2b}. No Blender/ComfyUI code in that freeze.
+
+\paragraph{B1 vertical slice (2026-08-27).}
+HIMYM ep1 panel~1 living-room two-shot: headless Blender 5.2.1 Cycles (seed 42, 32 samples, $768\times1152$) $\rightarrow$ ComfyUI HTTP img2img (SD~1.5 \texttt{v1-5-pruned-emaonly}, denoise 0.42, euler 18 steps, seed 42) on Mac MPS.
+Local API spend \$0 (no Gemini/fal).
+Two Cycles beauty reruns: pixel MAE $0.0$ (PNG byte hashes differ; encoder metadata).
+Stylizer still restages (speech-bubble/cloak drift) --- expected without ControlNet; B2 pins geometry.
+
+\paragraph{B2 ControlNet lock (2026-08-27).}
+Same panel, three cameras (\texttt{cam\_a} hero two-shot, \texttt{cam\_b} closer, \texttt{cam\_c} slight profile).
+Blender 5.2.1 Freestyle-as-pass is empty; lineart is Grease Pencil Line Art on black. Depth is inverted normalized Z (near=white). Index RGB: dad=R, maya=G.
+ComfyUI SD~1.5 multi-ControlNet on MPS (depth strength 0.75, lineart 0.65, denoise 0.45, seed 42). Local API spend \$0. SDXL waits until ControlNet fits.
+
+Cheap skimage structure (no Depth-Anything): mean SSIM(depth) $0.575$ vs hypothesis $0.7$ --- calibrated floor $0.53$. Mean edge IoU $0.368$. Visual geometry lock holds (sofa + two figures, no B1 restage).
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+\toprule
+Camera & SSIM(depth) & edge IoU \\
+\midrule
+cam\_a & 0.541 & 0.416 \\
+cam\_b & 0.513 & 0.293 \\
+cam\_c & 0.671 & 0.397 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{B3 style LoRA lock (2026-08-27).}
+Same three cameras, no Blender rerender. Acquired \texttt{neonforestmist/sd15-storybook-anime-lora} (CreativeML OpenRAIL-M; SHA256 \texttt{0304bb42\ldots e9b0}) because SDXL+ControlNet does not fit 16GB MPS.
+Locked on every ControlNet stylize: LoRA strength $1.0$, checkpoint \texttt{v1-5-pruned-emaonly}, euler 18, CFG $6.5$, seed 42, denoise $0.65$ (raised from B2 $0.45$ so the adapter shows through). Registry: \texttt{data/v2b/lora/registry.json}. Weights gitignored.
+Structure holds: mean SSIM(depth) $0.584$ (calibrated floor $0.53$); mean edge IoU $0.292$; mean pixel MAE vs B2 $0.047$. Local API spend \$0.
+Gut-check is these three framings, not a 10-scene VLM (B8). Style reads as storybook illustration on capsule meshes (warmer lamp, white spherical heads); B4 replaces capsules with block humanoids + Dad LoRA.
+
+\begin{center}
+\small
+\begin{tabular}{lccc}
+\toprule
+Camera & SSIM(depth) & edge IoU & MAE vs B2 \\
+\midrule
+cam\_a & 0.559 & 0.276 & 0.039 \\
+cam\_b & 0.525 & 0.286 & 0.054 \\
+cam\_c & 0.669 & 0.314 & 0.048 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{G1 eval harness (2026-08-27).}
+Prove-shot eval on the same three cameras. No PPO/GRPO/DPO.
+Structure hard gate is \textbf{mean} SSIM(depth) $\ge 0.53$ (not per-camera; cam\_b is often $0.51$--$0.52$). Locked B3 mean SSIM $0.584$ --- pass.
+Identity vs beauty is cheap \texttt{grid\_hist\_8x8} (log-only on G1 capsules; B4 uses DINOv2).
+Pairwise judge: \texttt{gemini-3.6-flash} direct \texttt{GOOGLE\_API\_KEY} (retired \texttt{gemini-2.5-flash} returned 404). A/B swap; never OmniRoute images.
+12/12 human labels on \texttt{/v2b/gate1}. Exact LLM--human $4/12$; tie-lenient $10/12$. Two hard disagreements: \texttt{b\_b2\_beauty} and \texttt{c\_b2\_beauty} (human prefers beauty, Gemini prefers B2). Exact $8/12$ is calibration debt, not a train signal. Harness still passes.
+Best-of-N seeds $\{42,43,44,45\}$ on existing AOVs. Winners: cam\_a seed~44, cam\_b seed~44, cam\_c seed~42 (copy of locked B3). Human and Gemini both pick locked B3 over the cam\_b BoN winner.
+46 successful Gemini pairwise calls, \$0.043. Preferences: \texttt{data/v2b/eval/preferences.jsonl}. Scorecard: \texttt{data/v2b/eval/himym\_ep01\_g1\_scorecard.json}. B8 stays locked.
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+\toprule
+Pair & Gemini & Human \\
+\midrule
+a\_b1\_b2 & B & B \\
+a\_b2\_b3 & B & tie \\
+a\_b1\_b3 & B & B \\
+a\_b3\_beauty & A & tie \\
+b\_b2\_b3 & B & tie \\
+b\_b2\_beauty & A & B \\
+b\_b3\_beauty & A & tie \\
+b\_bon\_b3 & B & B \\
+c\_b2\_b3 & B & tie \\
+c\_b2\_beauty & A & B \\
+c\_b3\_beauty & A & tie \\
+c\_bon\_b3 & tie & tie \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{B4 character LoRA (2026-08-27).}
+Capsules cannot be a character dataset. B4 replaces them with block humanoids (Dad: navy sweater + curly hair spheres; Maya: hoodie + ponytail) and writes a sibling tree \texttt{outputs/v2b/himym\_ep01/b4/} so G1 \texttt{cam\_\{a,b,c\}} stays frozen.
+Standing Dad turntable (no sofa), \texttt{--quick} 8 views $\times$ 2 seeds. Bootstrap stylize: denoise $0.40$, ControlNet depth $0.55$ / lineart $0.45$, style LoRA on, trigger \texttt{ce\_dad\_rohan}. Four Maya standing views as contrast only --- no Maya LoRA (that is B6).
+Train: SD~1.5 rank-16 LoRA in \texttt{ComfyUI/.venv} (diffusers+PEFT, 250 steps on 12 cached latents). Compass named kohya/SDXL; this 16GB Mac cannot. Weights gitignored; SHA256 \texttt{bfd7f7d8\ldots 3bfaf} in \texttt{data/v2b/lora/registry.json}.
+Infer: stacked \texttt{LoraLoader} (style then Dad at $0.8$) on the new living-room AOVs. Local API spend \$0. Never OmniRoute.
+Scorecard \texttt{data/v2b/eval/himym\_ep01\_b4.json}: mean SSIM(depth) $0.5488$ (floor $0.53$) --- pass. Restage MAE vs beauty $0.061$--$0.082$ ($\le 0.12$). DINOv2-small on 4 holdout stylized views: $3/4$ closer to Dad sheet than Maya --- pass (\texttt{--quick} bar; full bar is $6/8$). \texttt{grid\_hist\_8x8} stays log-only; do not claim Compass $0.85$.
+cam\_b SSIM $0.469$ fails per-camera (same pattern as G1); the hard gate is the mean. Gut-check: hair mass readable on cam\_a; Maya is a smaller hoodie figure, not an orange capsule. B8 stays locked.
+
+\begin{center}
+\small
+\begin{tabular}{lccc}
+\toprule
+Camera & SSIM(depth) & edge IoU & MAE vs beauty \\
+\midrule
+cam\_a & 0.534 & 0.263 & 0.061 \\
+cam\_b & 0.469 & 0.244 & 0.082 \\
+cam\_c & 0.644 & 0.252 & 0.063 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{B5 location reuse (2026-08-27).}
+Panel specs are versioned JSON under \texttt{data/v2b/specs/} (Pydantic; not \texttt{episode\_schema.py}). Headless \texttt{build\_scene.py} places primitives from that JSON. Prove: living room $\times 3$ cameras (stacked style+Dad LoRA) and Grand Oriole lobby $\times 2$ (style only, empty --- Young Rohan has no LoRA). Sibling tree \texttt{outputs/v2b/himym\_ep01/b5/}. G1/B4 stay frozen. Local API spend \$0. Never OmniRoute.
+Location eval paints object-index characters out, then DINOv2-small on backgrounds: living intra-mean $0.825$, lobby pair $0.737$, living--lobby $0.476$. Same-room beats cross-room --- pass. Compass $0.9$ is a hypothesis, not claimed.
+Structure floor $0.53$ is the living-room calibration: living mean SSIM(depth) $0.5489$ --- pass (cam\_b $0.469$ still under per-camera). Lobby mean $0.478$ (wide $0.388$) --- empty-room cheap-depth, logged separately. Restage MAE vs beauty $\le 0.082$ living / $\le 0.039$ lobby. B8 stays locked. Tram waits.
+
+\begin{center}
+\small
+\begin{tabular}{llcc}
+\toprule
+Panel & SSIM(depth) & MAE vs beauty & location \\
+\midrule
+living\_a & 0.534 & 0.061 & living\_room \\
+living\_b & 0.469 & 0.082 & living\_room \\
+living\_c & 0.644 & 0.063 & living\_room \\
+lobby\_wide & 0.388 & 0.039 & grand\_oriole\_lobby \\
+lobby\_close & 0.569 & 0.038 & grand\_oriole\_lobby \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{B6 multi-character masks (2026-08-27).}
+Maya gets the same SD~1.5 turntable LoRA recipe as Dad (\texttt{ce\_maya}, rank 16, 250 steps, SHA256 \texttt{b767153f\ldots 8d86}). Prove: living-room cam\_a and cam\_c only --- cam\_b is the hard crop. Two-pass: style+Dad on the full frame, then stock ComfyUI \texttt{VAEEncodeForInpaint} on the G object-index with Maya LoRA (no global Dad+Maya stack). Sibling tree \texttt{outputs/v2b/himym\_ep01/b6/}. G1/B4/B5 stay frozen. Local API spend \$0. Never OmniRoute. No InstantID.
+Maya holdout DINOv2-small $4/4$ closer to Maya sheet than Dad --- pass (\texttt{--quick} bar). Structure mean SSIM(depth) $0.5917$ (floor $0.53$) --- pass. Restage MAE vs beauty $0.065$--$0.067$.
+Bleed: Dad R-crop vs pass1 $0.966$ / $0.984$ (floor $0.90$) --- the mask held. Maya G-crop own $>$ other both cameras. Seated dad\_own vs Maya sheet is a coin-flip on block meshes in a tight two-shot --- log-only, same honesty as SSIM $0.53$ vs Compass $0.7$. Compass $0.85$ not claimed. B8 stays locked.
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Camera & SSIM(depth) & MAE vs beauty & Dad vs pass1 & Maya own$>$cross \\
+\midrule
+cam\_a & 0.537 & 0.065 & 0.966 & yes \\
+cam\_c & 0.647 & 0.067 & 0.984 & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{G2 licensed meshes (2026-08-29).}
+Block humanoids are replaced by pinned Kenney Animated Characters Protagonists 1.1 (\textbf{CC0}) glTF stand-ins --- cartoon skaters, not Indian-presenting Dad/Maya likenesses. New SD~1.5 LoRAs \texttt{ce\_dad\_gltf} / \texttt{ce\_maya\_gltf} (rank 16, 250 steps, SHA256 \texttt{7b71b798\ldots f3c4} / \texttt{2681efe4\ldots ce57}). B4/B6 weights \texttt{ce\_dad\_rohan} / \texttt{ce\_maya} are untouched. Prove: living-room cam\_a and cam\_c two-pass (style+Dad globally, Maya G-index inpaint). Sibling tree \texttt{outputs/v2b/himym\_ep01/g2/}. Rollup of B2--B6 is \texttt{data/v2b/eval/himym\_ep01\_until\_now.json}. Local API spend \$0. Never OmniRoute. No InstantID.
+Maya holdout DINOv2-small $4/4$ --- pass. Structure mean SSIM(depth) $0.5808$ (floor $0.53$) --- pass. cam\_a $0.523$ fails per-camera (same honesty as B4 cam\_b); the hard gate is the mean. Restage MAE vs beauty $0.074$--$0.081$.
+Bleed: Dad R-crop vs pass1 $0.990$ / $0.979$ (floor $0.90$) --- the mask held. Maya G-crop own $>$ other both cameras (narrow). Seated dad\_own vs Maya sheet is log-only. Compass $0.85$ not claimed. \textbf{G3} dashboard catalog search stays locked. B8 stays locked.
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Camera & SSIM(depth) & MAE vs beauty & Dad vs pass1 & Maya own$>$cross \\
+\midrule
+cam\_a & 0.523 & 0.074 & 0.990 & yes \\
+cam\_c & 0.639 & 0.081 & 0.979 & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Dashboard Surfaces}
+\textbf{Local} (\texttt{http://127.0.0.1:8765}): usage KPIs, TaskObserver, Stories, Library, ROI, Analytics, Images, admin console, public \texttt{/review}, Report PDF (\texttt{/report}).
+
+\textbf{Hosted beta:} reader \texttt{https://comicengine-reader.vercel.app}; fellowdev admin \texttt{https://comicengine-admin.vercel.app} (password-gated). Live image regen / OmniRoute scripting remain on the laptop (or a GPU/API host).
+
+\section{What We Explicitly Learned}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item OmniRoute is excellent for LLM scripting/judging; keeping images off OmniRoute avoided opaque image billing and matched commercial-key policy.
+  \item fal~\texttt{schnell} makes wide style exploration financially trivial (\textasciitilde\$0.024 for 8 bake-off frames).
+  \item Auto style judges trade off immersion vs.\ bedtime safety; human adjudication remains mandatory for product voice. G1 exact Gemini--human agreement was $4/12$ (tie-lenient $10/12$) --- humans tied often; Gemini preferred stylized B3 over beauty and over B2.
+  \item Pillow ``pass'' is necessary but not sufficient for character consistency; the Phase~3 LLM judge correctly ranked \texttt{gemini\_ref} over cheaper text-only despite identical QA scores.
+  \item OmniRoute model routing matters: prefer \texttt{auto} (or provider-prefixed Claude) when \texttt{auto/cheap} returns thinking text without \texttt{tool\_use}.
+  \item Vercel serverless session UX needs HttpOnly cookies (Bearer-only + aggressive \texttt{/me} clears caused login loops); CSS \texttt{display} on \texttt{.btn} overrides HTML \texttt{[hidden]}.
+  \item Version~2B B5: DINOv2 background cosine separates living-room cameras ($0.825$) from Grand Oriole lobby ($0.476$ cross); Compass $0.9$ is still a hypothesis.
+  \item Version~2B B6: two-pass G-index inpaint keeps Dad vs pass1 at $0.966$+; Maya holdout $4/4$. Seated dad\_own vs Maya sheet on block two-shots is log-only.
+  \item Version~2B G2: Kenney CC0 glTF stand-ins beat cubes for ControlNet silhouettes; they are not a likeness. New LoRAs must not overwrite block adapters. glTF hashed-alpha imports render invisible until Alpha is forced opaque.
+\end{enumerate}
+
+\section{Risks and Ethics}
+CJP bedtime lane remains ages $\sim$7--10; Phase~4 hard-history lane is teen didactic ($\sim$13--17).
+Hitler content must never romanticize Nazism; Caesar content must not romanticize political murder.
+Respectful depiction of public figures; Commons attribution for place photos; human fact-check before any public publish.
+Style and consistency locks must not be decided solely by LLM judges or blank-frame QA.
+Public beta URLs expose comics widely --- keep admin password private; Upstash holds reader hashes/sessions/feedback.
+
+\section{Next Gates}
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item Human style lock: clear \texttt{human\_judge\_pending} (manhwa vs painterly).
+  \item Collect panel/story ratings from beta readers; harvest admin live people analytics for Version~2 priorities.
+  \item Re-run \texttt{prepare\_admin\_site.py} (+ redeploy) whenever ledger/ROI snapshot must refresh.
+  \item Version~2B G3 (locked): dashboard search to pick/edit a licensed character mesh. B7 sequencing. B8 stays locked.
+\end{itemize}
+
+\section{Conclusion}
+ComicEngine now covers script$\rightarrow$render$\rightarrow$compose$\rightarrow$assemble$\rightarrow$curate$\rightarrow$ROI$\rightarrow$hosted reader/admin beta$\rightarrow$publish packaging.
+Version~2 starts at Phase~12 using logged panel/story feedback from beta readers.
+\appendix
+\section{Reproduce}
+\begin{verbatim}
+source .venv/bin/activate
+pip install -e .
+# configure .env (never commit)
+python scripts/run_dashboard.py
+python scripts/build_report.py
+# PDF: http://127.0.0.1:8765/report
+\end{verbatim}
+
+\section{Changelog (report editions)}
+\begin{description}[style=nextline,leftmargin=0pt,font=\normalsize\bfseries]
+\item[2026-08-09 a] Initial two-column architecture draft.
+\item[2026-08-09 b] Living phase log: ledger tables, Phase~2 judge matrix, Phase~3 interim notes.
+\item[2026-08-09 c] Phase~3 gate closed: 22/22 images, winner \texttt{gemini\_ref} (judge 40), ledger \$0.532; dashboard \texttt{/report} link.
+\item[2026-08-09 d] Phase~4 scripts: Et tu Brutus + Hitler warning (teen didactic, character POV) beside CJP; ledger $\approx$\$1.19.
+\item[2026-08-09 e] Phase~5: 44/44 panels rendered (\texttt{gemini\_ref}/Kontext); Stories show images; ledger $\approx$\$2.96.
+\item[2026-08-09 f] Phase~6: speech bubbles/captions on 44 panels; reader bridges + cast/facts on Stories pages.
+\item[2026-08-09 g] Phase~7: vertical webtoon + PDF for all three stories; Stories download/preview links.
+\item[2026-08-09 h] Phase~7.5: Only Image editions + Story Library (\texttt{/library}) catalog.
+\item[2026-08-09 i] Phase~8: curation SQLite + CLI + Library approve/reject/regenerate.
+\item[2026-08-09 j] Phase~9: ROI dashboard (\texttt{/roi}) unit economics + spend charts.
+\item[2026-08-09 k] Phase~8.5: panel rating + editable art prompt on reject/regen.
+\item[2026-08-09 l] Phase~8.6: dual Vercel reader/admin + Upstash auth; thumbnails; live people analytics; Beta branding; ledger snapshot still $\approx$\$2.96 / 138 calls.
+\item[2026-08-27 a] Version~2B B0/B1: 3D-previs architecture freeze; HIMYM ep1 panel~1 Cycles$\rightarrow$ComfyUI SD~1.5; beauty seed MAE $0.0$.
+\item[2026-08-27 b] Version~2B B2: three-camera AOVs + SD~1.5 ControlNet; mean SSIM(depth) $0.575$ (calibrated floor $0.53$); visual geometry lock.
+\item[2026-08-27 c] Version~2B B3: locked SD~1.5 storybook style LoRA (strength $1.0$, denoise $0.65$); mean SSIM(depth) $0.584$; mean MAE vs B2 $0.047$.
+\item[2026-08-27 d] Version~2B G1: 12/12 human pairs; Gemini exact $4/12$ (tie-lenient $10/12$); BoN seeds 42--45; \$0.043 \texttt{gemini-3.6-flash}; no DPO.
+\item[2026-08-27 e] Version~2B B4: block humanoids; Dad SD~1.5 LoRA (250 steps, SHA256 \texttt{bfd7f7d8\ldots}); mean SSIM $0.549$; DINOv2 $3/4$ Dad$>$Maya; B8 still locked.
+\item[2026-08-27 f] Version~2B B5: spec-driven living room $\times 3$ + Grand Oriole lobby $\times 2$; living SSIM $0.549$; DINOv2 same-room $0.825$ $>$ cross $0.476$; no Rohan LoRA.
+\item[2026-08-27 g] Version~2B B6: Maya SD~1.5 LoRA (250 steps) + two-pass G-index inpaint on cam\_a/c; SSIM $0.592$; holdout $4/4$; Dad vs pass1 $0.966$+; B8 still locked.
+\item[2026-08-29 a] Version~2B G2: Kenney CC0 glTF stand-ins; new LoRAs \texttt{ce\_dad\_gltf}/\texttt{ce\_maya\_gltf} (250 steps); mean SSIM $0.581$; holdout $4/4$; Dad vs pass1 $0.990$+; G3 catalog search locked; B8 still locked.
+\end{description}
+
+\end{document}

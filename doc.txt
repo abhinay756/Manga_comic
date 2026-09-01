@@ -1,0 +1,256 @@
+MANGA ENGINE
+Replication, System Design, Experiment, and Evaluation Report
+Audit date: 2026-09-02
+
+PURPOSE
+This report renames the replicated project from ComicMainEngine/ComicEngine to
+Manga Engine. It records what has been implemented and evaluated, what the
+available evidence proves, and what must still be evaluated before a production
+claim is made. API keys are configuration only: no secret value appears here.
+
+LOCAL RUN STATUS
+- Admin/dashboard: http://127.0.0.1:8765/ (HTTP 200 verified)
+- Built-in reader: http://127.0.0.1:8765/review (HTTP 200 verified)
+- Exported public comic site: http://127.0.0.1:8766/ (HTTP 200 verified)
+- Public library: http://127.0.0.1:8766/library.html (HTTP 200 verified)
+- Python dependencies were installed from requirements.txt. The missing
+  itsdangerous session dependency was added to requirements.txt.
+
+REPRODUCTION RULES
+1. Keep .env local and untracked. It may contain API credentials and must never
+   be included in commits, screenshots, reports, or generated public sites.
+2. Text generation can use OmniRoute when configured. Image generation uses
+   direct provider keys; do not route image calls through OmniRoute.
+3. The old Python import package remains comicengine for compatibility. The
+   project/distribution name and public product name are Manga Engine.
+4. Preserve seeds, model/LoRA hashes, prompts, panel specs, and evaluation
+   scorecards with each experiment. Without those, a visual result is not
+   reproducible evidence.
+
+SYSTEM DESIGN -- VERSION 1 (IMPLEMENTED PIPELINE)
+
+Inputs
+  Story specification + character descriptions + style lock + provider config
+      |
+      v
+Phase 0/0.5 -- provider ping and structured script generation
+      |
+      v
+Episode JSON -- panels, dialogue, continuity data, art prompts
+      |
+      v
+Phase 1-3 -- style samples, reference sheets, character-consistency bake-off
+      |
+      v
+Phase 4-5 -- multi-story scripts and batch panel generation
+      |
+      v
+Phase 6-7.5 -- local composition, webtoon/PDF assembly, image-only variant
+      |
+      v
+Phase 8-8.6 -- curation, reader feedback, reviewer CRM and authentication
+      |
+      v
+Phase 9-11 -- ROI ledger, static publication export, cost guardrails
+      |
+      +--> FastAPI dashboard: tasks, stories, analytics, images, ROI, report
+      +--> Public reader/exported comic site
+
+Key implementation areas:
+- src/comicengine/: configuration, API clients, usage database, prompts,
+  style locking, panel composition, library, curation, feedback, ROI.
+- dashboard/: FastAPI administration and reader routes.
+- outputs/: generated evidence and publishable assets.
+- data/usage.db: auditable API and task ledger.
+
+VERSION 1 EXPERIMENT LOG AND RESULTS
+
+Phase 0 -- API viability
+- 13 calls were logged in the historical ledger.
+- Cost: USD 0.0031688.
+- Result: provider connectivity was established before production work.
+
+Phase 0.5 -- structured history/comic scripting
+- Two logged calls, USD 0.045819.
+- Evidence: outputs/phase0.5/episode_cjp_origin.json and reference manifest.
+- Result: the pipeline produced a structured episode packet and research refs.
+
+Phase 1-2 -- first image and style exploration
+- Phase 1: one logged image call, USD 0.003.
+- Phase 2: 13 calls, USD 0.093276.
+- Result: established the korean_manhwa style lock used by the original V1
+  pipeline. This is an old default, not the prescribed style for Version 2A.
+
+Phase 3 -- character consistency bake-off
+- Candidates: text_only_fal (n=6), gemini_ref (n=6), flux_kontext (n=2).
+- Automated local QA: all reported 1.00 average QA/pass rate.
+- Judge ranking: gemini_ref 40/50; flux_kontext 36/50; text_only_fal 32/50.
+- Decision: use gemini_ref for standard character locking and reserve
+  flux_kontext for difficult identity retries.
+- Important limitation: the local QA measured blankness, dimensions, and
+  brightness. It did not independently measure facial identity. Kontext was
+  under-sampled, so it is not a statistically equal comparison.
+- Evidence: outputs/phase3/decision.json and consistency_manifest.json.
+
+Phase 4-5 -- multi-story rendering
+- Scripts produced: Cockroach Janta Party, Et tu Brutus, Hitler warning, plus
+  a longer HIMYM episode packet.
+- Batch render evidence: 12 + 16 + 16 = 44 panels; 44 success, 0 errors.
+- Phase 5 cost: USD 1.772 total / USD 0.0403 per panel.
+- Evidence: outputs/phase5/batch_summary.json and per-episode manifests.
+
+Phase 6-7.5 -- compose and assemble
+- Composition: all 44 panels across the three completed stories succeeded.
+- Assembly: all three stories have an OK status and no missing panels.
+- Deliverables include Webtoon images and PDFs; image-only variants were also
+  created for all three stories.
+- Evidence: outputs/phase6/compose_summary.json,
+  outputs/phase7/assemble_summary.json, and outputs/phase7.5/assemble_summary.json.
+
+Phase 8-8.6 -- human review loop
+- Curation, reviewer CRM, panel feedback, public review, and sign-in flows are
+  implemented. The reporting snapshot records 12 approved panels after Phase
+  11, while an earlier ROI snapshot reported 1; the later guardrail snapshot
+  is the current one in this repository.
+- Interpretation: the feedback loop exists, but its reviewer sample size and
+  decision taxonomy distribution are not included as a formal study result.
+
+Phase 9-11 -- economics, publishing, safety
+- Historical ledger: 129 calls, USD 2.9598708 total R&D, 7 errors.
+- Unit economics: USD 0.9866 per story and USD 0.0673 blended per panel.
+- Projection: USD 98.66 for 100 episodes at the historical blend.
+- Category reliability: image 96/101 successful (95.0%); text 25/27
+  successful (92.6%). These are operational counts, not visual-quality scores.
+- Publishing export and cost guardrails are present. No automatic reviewer
+  regeneration; direct image providers; style lock frozen pending human taste
+  gates.
+- Evidence: outputs/phase9/roi_snapshot.json,
+  outputs/phase10/publish_manifest.json, outputs/phase11/cost_guardrails.json.
+
+SYSTEM DESIGN -- VERSION 2 (FEEDBACK LEARNING TRACK)
+The architecture documents describe Version 2 as a separate reader-feedback
+learning loop: feedback harvest -> sync -> incident ledger -> mistake memory
+-> product waves -> knowledge graph -> critic/DPO. The documented state file
+data/v2_program.json is not present in this checkout. Therefore Version 2
+cannot currently be treated as a reproducible completed implementation.
+
+Required repair before claiming Version 2 is complete:
+- recover or recreate data/v2_program.json from the authoritative history;
+- document the feedback taxonomy and the number of labeled incidents;
+- run a held-out evaluation showing that any critic/product wave improves over
+  a frozen baseline; and
+- do not train DPO/PPO from a tiny or unverified feedback set.
+
+SYSTEM DESIGN -- VERSION 2A (STORYBOARD-FIRST, PARALLEL)
+
+Vague story + character notes
+  -> Story Architect: epic map, bibles, fact/tradition sheet, episodes
+  -> Scene Director: camera, light, blocking, continuity shot cards
+  -> Human storyboard sketch
+  -> Ingest: deskew/line extraction and tag to episode/panel
+  -> Sketch-conditioned image enhancement under character/location/light locks
+  -> Human approve, ink, or reject
+  -> Last-N approved-panel memory
+  -> Periodic LoRA/critic distillation from approved pairs
+
+Why it differs from V1:
+- V1 asks a model to infer pose and camera from text.
+- V2A makes the human sketch the composition contract, reducing restaging and
+  allowing a non-default visual language.
+
+Current evidence:
+- A0 architecture freeze: complete.
+- A1 Story Architect: complete, including 10 Aranya -- The Capture packets,
+  bibles, and fact/tradition data.
+- A2 storyboard ingest: locked, no real sketch stored against a panel yet.
+- A3 sketch-conditioned bake-off: locked, no three-panel/method comparison.
+- A4 panel memory/human gate: locked.
+- A5 distillation: locked; needs at least 30 approved pairs.
+
+Conclusion: V2A is a documented design and content-planning success, not yet a
+validated visual-generation track. The next valid experiment is A2 then A3,
+not a full ten-episode render.
+
+SYSTEM DESIGN -- VERSION 2B (3D PREVIS, PARALLEL)
+
+Versioned panel specification
+  -> headless Blender scene build
+  -> beauty + depth + normal + Freestyle + object-index AOVs
+  -> local ComfyUI img2img + ControlNet + style/character LoRAs
+  -> structure, identity, location, lighting scorecard
+  -> constrained best-of-N selection
+  -> human A/B labels and preference dataset
+
+The 3D specification is the camera contract. This avoids relying on LLM spatial
+reasoning at rendering time. The current fixture is the 76-panel HIMYM Episode
+1, but only proof shots were rendered; do not claim all 76 are complete.
+
+VERSION 2B EVALUATION EVIDENCE
+- B2 AOV + ControlNet: mean depth SSIM 0.5751; passes calibrated floor 0.53.
+- B3 style LoRA: mean depth SSIM 0.5842; passes floor.
+- G1 harness: 12 human A/B labels, Gemini exact agreement 4/12 and tie-lenient
+  agreement 10/12; mean depth SSIM 0.584; N=4 candidates. The harness passes,
+  but exact agreement is calibration debt, not an RL-training signal.
+- B4 Dad LoRA: mean depth SSIM 0.5488; DINOv2 Dad-over-Maya held-out wins 3/4.
+  One camera fell below the per-camera floor, so the mean-only pass is weak.
+- B5 reusable locations: living-room SSIM 0.5489; same-room DINOv2 0.825
+  exceeds living-vs-lobby 0.476. The uncalibrated 0.9 target is not claimed.
+- B6 two-pass masks: mean depth SSIM 0.5917; Maya identity 4/4 on holdout;
+  Dad/pass-one similarity 0.966 and 0.9843; no material cross-character bleed
+  on this limited fixture.
+- G2 licensed CC0 glTF meshes: mean depth SSIM 0.5808; Maya holdout 4/4.
+  cam_a SSIM is 0.5229 (below the 0.53 floor) while cam_c is 0.6387. Do not
+  ship cam_a without remediation simply because the mean passes.
+- Evidence: data/v2b/eval/himym_ep01_until_now.json, g1_scorecard.json,
+  himym_ep01_b4.json, b5.json, b6.json, and g2.json.
+
+WHAT IS STILL NEEDED (DO NOT CLAIM COMPLETE YET)
+1. V2A: run A2 and A3 with one real storyboard scene, at least two methods,
+   at least three panels, a signed ink/print style lock, and a restage-failure
+   criterion.
+2. V2B G2: repair or exclude cam_a; report per-camera pass rates rather than
+   only a mean.
+3. V2B B7: prove a small three-to-five-panel sequence with content-hash cache
+   and cross-panel identity/location/style measurements.
+4. V2B B8: run best-of-N (N=4 to 8) across representative locations and gather
+   at least 24-48 blinded human A/B labels. Calibrate the automatic ranker on a
+   held-out set, publish exact and tie-tolerant agreement, and flag low
+   confidence/disagreements.
+5. V2 / DPO: only consider B9 or a critic after thousands of verified
+   preference pairs and a suitable cloud-GPU budget. No live PPO/GRPO and no
+   DPO based on the current 12-label G1 set.
+
+WHY NO NEW EXPENSIVE API EVALUATION WAS RUN IN THIS AUDIT
+The reproducible records already contain the latest V1 and V2B scorecards, but
+this machine currently has no Blender executable and no local ComfyUI listener
+on port 8188. Re-running a provider-only image call would not validate the
+3D/ControlNet evaluation it is meant to measure and would add cost without
+evidence. Once Blender and ComfyUI are available, execute the numbered next
+experiments above with new run IDs, immutable manifests, and human labels.
+
+LIVE PROVIDER CHECK AFTER AUDIT
+On 2026-09-02, direct Anthropic, OpenAI, and Google text checks each returned
+the expected response "ok" and wrote tracked usage records under phase0.
+The original direct test exposed a configuration defect: it passed the
+OmniRoute-only model ID auto/cheap to native Anthropic and OpenAI endpoints.
+src/comicengine/clients.py now selects native fallback models in direct mode
+(Claude Haiku 4.5 and GPT-4.1 mini) while preserving auto/cheap for OmniRoute.
+OmniRoute itself was not tested because no listener was present at
+localhost:20128. No image generation was run.
+
+RECOMMENDED RELEASE CLAIM
+Manga Engine is a working, locally runnable comic-generation and publication
+prototype with a completed V1 end-to-end run, tracked economics, an operational
+dashboard, and a public reader. Version 2A is designed but not visually proven;
+Version 2B has promising proof-shot results but is not yet a production
+sequence or full-episode system. State these limits clearly to collaborators.
+
+AUTHORITATIVE ARTIFACTS
+- README.md and pyproject.toml: Manga Engine local setup and product naming.
+- dashboard/ and outputs/phase10/site/: running dashboard and comic reader.
+- outputs/phase3/decision.json: V1 model bake-off decision.
+- outputs/phase5, phase6, phase7, phase7.5: end-to-end render evidence.
+- outputs/phase9/roi_snapshot.json: historical cost and reliability ledger.
+- docs/V2A_ARCHITECTURE.md and data/v2a_program.json: V2A design/state.
+- docs/V2B_ARCHITECTURE.md and data/v2b_program.json: V2B design/state.
+- data/v2b/eval/: V2B evaluation scorecards.

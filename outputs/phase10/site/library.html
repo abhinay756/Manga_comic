@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#121a2d" />
+  <title>Manga Engine · Library</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="public-site">
+  <header class="public-header">
+    <a class="wordmark" href="./library.html" aria-label="Manga Engine library">MANGA <span>ENGINE</span></a>
+    <nav class="public-nav" aria-label="Primary navigation">
+      <a class="nav-link is-active" href="./library.html">Library</a>
+      <a class="nav-link" href="./feedback.html">Feedback</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="library-hero">
+      <p class="eyebrow">ORIGINAL STORIES · BETA</p>
+      <h1>Stories made to be read.</h1>
+      <p class="hero-copy">Explore the Manga Engine library. Each story includes a reader edition and, when published, a clean image-only edition.</p>
+      <div class="library-summary" id="librarySummary" aria-live="polite">Loading library…</div>
+    </section>
+
+    <section class="library-section" aria-labelledby="libraryHeading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">THE COLLECTION</p>
+          <h2 id="libraryHeading">Available stories</h2>
+        </div>
+        <button class="refresh-button" id="refreshLib" type="button">Refresh</button>
+      </div>
+      <div class="library-grid public-library-grid" id="libraryGrid" aria-live="polite"></div>
+      <p class="library-error" id="libraryError" hidden></p>
+    </section>
+  </main>
+
+  <footer class="public-footer">
+    <span>© 2026 Abhinay · Manga Engine</span>
+    <span>Built for stories, panels, and experiments.</span>
+  </footer>
+
+  <script src="./library.js"></script>
+</body>
+</html>

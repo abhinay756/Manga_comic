@@ -1,0 +1,39 @@
+{
+  "updated_at": "2026-09-01T20:09:46.967461+00:00",
+  "recommendations": [
+    {
+      "category": "text",
+      "purpose": "hello",
+      "optimal": {
+        "model_key": "google::gemini-3.1-flash-lite",
+        "provider": "google",
+        "model": "gemini-3.1-flash-lite",
+        "samples": 3,
+        "avg_cost_usd": 1e-06,
+        "avg_latency_ms": 1025,
+        "avg_quality": null
+      },
+      "cheapest": {
+        "model_key": "google::gemini-3.1-flash-lite",
+        "provider": "google",
+        "model": "gemini-3.1-flash-lite",
+        "samples": 3,
+        "avg_cost_usd": 1e-06,
+        "avg_latency_ms": 1025,
+        "avg_quality": null
+      },
+      "fastest": {
+        "model_key": "anthropic::claude-haiku-4-5-20251001",
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5-20251001",
+        "samples": 1,
+        "avg_cost_usd": 9.6e-05,
+        "avg_latency_ms": 881,
+        "avg_quality": null
+      },
+      "best_quality": null,
+      "reason": "lowest avg cost among successful calls",
+      "note": "Recommendation only \u2014 scripts do not auto-switch yet."
+    }
+  ]
+}

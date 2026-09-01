@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    { "source": "/review", "destination": "/index.html" },
+    { "source": "/review/:id", "destination": "/story.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    },
+    {
+      "source": "/stories.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}
